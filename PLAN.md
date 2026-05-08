@@ -27,7 +27,8 @@ Build a NuGet library that any Seq app can take a dependency on to add **LLM-bas
 
 - [ ] **MAF function tools for Seq context** ⬅ next priority — give the LLM tools to query Seq for the actual events that triggered the alert, turning a shallow metadata summary into genuine root-cause analysis:
   - No MCP server needed — MAF's `AIFunctionFactory.Create()` + `[Description]` attributes is sufficient for internal use
-  - `SeqApiKey` — one new `[SeqAppSetting]` (optional); Seq server URL comes from `Host.BaseUri` which is already on `SeqApp`, no extra setting needed
+  - **Zero-config goal**: always attempt the Seq API call without a key first (anonymous access). If Seq allows anonymous reads — which it does in many dev/internal setups — it works with no extra settings at all. If Seq returns 401, gracefully return empty results so the LLM falls back to alert metadata only. `SeqApiKey` is an optional `[SeqAppSetting]` for instances that require auth; it is never required.
+  - Note: since the app runs inside Seq's own process, calls to `Host.BaseUri` may bypass auth entirely (hitting localhost) — worth verifying at implementation time.
   - Initial tool: `SearchEvents(string filter, string fromDateUtc, string toDateUtc, int count)` → calls `GET {Host.BaseUri}/api/events` with `X-Seq-ApiKey` header, returns rendered event messages as a string block
   - Register the tool on the agent via `tools: [AIFunctionFactory.Create(seqFunctions.SearchEvents)]` in `OnAttached`
   - With this the LLM can call `SearchEvents` to pull the actual `GATEWAY_TIMEOUT` error messages, customer IDs, amounts, etc. before writing the summary
