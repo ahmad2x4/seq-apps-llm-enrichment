@@ -23,7 +23,14 @@ Build a NuGet library that any Seq app can take a dependency on to add **LLM-bas
 
 ### Backlog
 
-- [ ] **Unlist accidental `0.1.0` stable** on NuGet — was published when version-reset commit was pushed directly to `main`; 0 downloads, safe to unlist now
+- [x] **Unlist accidental `0.1.0` stable** — confirmed unlisted (NuGet registration API returns 404)
+
+- [ ] **MCP server for Seq context** ⬅ next priority — give the LLM tools to query Seq itself for richer context before generating the summary:
+  - Build an MCP server wrapping the Seq HTTP API
+  - Expose tools: `search_logs(filter, timeRange, count)`, `get_signal(signalId)`, `get_alert(alertId)`
+  - Register as a tool provider on the MAF agent in `OnAttached`
+  - Turns shallow "what happened" into "here is the context and likely cause" analysis
+
 - [ ] **Multi-provider support** — add a provider selector setting and init path for each MAF-supported provider:
   - `OpenAI` — done (default)
   - `Azure OpenAI` — MAF supports it natively; needs `LlmEndpoint` setting
@@ -31,13 +38,7 @@ Build a NuGet library that any Seq app can take a dependency on to add **LLM-bas
   - `Ollama` — MAF supports it; useful for on-prem/air-gapped deployments
   - Reference: https://learn.microsoft.com/en-us/agent-framework/agents/providers/?pivots=programming-language-csharp
 
-- [ ] **MCP server for Seq context** — give the LLM tools to query Seq itself for richer context before generating the summary:
-  - Build an MCP server wrapping the Seq HTTP API
-  - Expose tools: `search_logs(filter, timeRange, count)`, `get_signal(signalId)`, `get_alert(alertId)`
-  - Register as a tool provider on the MAF agent in `OnAttached`
-  - Turns shallow "what happened" into "here is the context and likely cause" analysis
-
-- [ ] **Publish stable `0.1.0`** — after multi-provider support lands and API is settled; merge `dev` → `main` via PR
+- [ ] **Publish stable `0.1.0`** — after MCP and multi-provider land and API is settled; merge `dev` → `main` via PR
 - [ ] **PR to datalust/seq-app-httprequest** — backwards-compatible (no-op when unconfigured); strong case for upstream merge
 - [ ] **Repeat fork pattern** for Teams / Slack / Email apps
 
