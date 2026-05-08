@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -25,7 +26,11 @@ namespace Seq.Apps.LlmEnrichment
             "Be brief — 2-3 sentences maximum. Do not include greetings or closing remarks.";
 
         const string DefaultPromptTemplate =
-            "Summarize this Seq alert:\n\nMessage: {RenderedMessage}\nLevel: {Level}\nTimestamp: {Timestamp}";
+            "Alert \"{Alert.Title}\" has triggered in production.\n\n" +
+            "Event data:\n{EventProperties}\n\n" +
+            "Write a 2-3 sentence incident summary covering: what is failing and likely why, " +
+            "the business impact, and the single most important immediate action. " +
+            "Be specific and technical. Never say \"investigate further\" — give a concrete first step.";
 
         AIAgent? _agent;
 
@@ -115,6 +120,15 @@ namespace Seq.Apps.LlmEnrichment
                 : LlmPromptTemplate!;
 
             var properties = ExtractProperties(evt);
+
+            // Built-in: formats all event properties as a readable key: value block,
+            // excluding low-signal built-ins that are already available as individual placeholders.
+            var excluded = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+                { "RenderedMessage", "Level", "Timestamp" };
+
+            properties["EventProperties"] = string.Join("\n", properties
+                .Where(kv => !excluded.Contains(kv.Key))
+                .Select(kv => $"{kv.Key}: {kv.Value}"));
 
             return Regex.Replace(template, @"\{([\w.]+)\}", m =>
             {
