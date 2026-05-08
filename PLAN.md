@@ -17,29 +17,28 @@ Build a NuGet library that any Seq app can take a dependency on to add **LLM-bas
 - [x] **HTTP fork integration** — `base.OnAttached()` + `evt = await EnrichAsync(evt)` + base class swap; `{AISummary}` resolves automatically in ExpressionTemplate body
 - [x] **End-to-end test** — alert fires in local Seq (2026.1, .NET 10), LLM summary appears in webhook.site payload
 - [x] **README** — library-vs-app distinction, integration steps, settings table, failure behaviour, requirements
-
-### In progress / next
-
-- [ ] **Tests** — property injection for both `TData` flavors, failure modes (timeout, API error), event type guard, `OnAttached` initialization guard
+- [x] **Tests** — 15 tests covering property injection (both `TData` flavors), failure modes, event type guard, `OnAttached` initialization guard; no real LLM calls via `protected virtual CallLlmAsync`
+- [x] **CI/CD** — GitHub Actions on `dev`/`main`; publishes prerelease to NuGet on every `dev` push, stable on `main` merge; `0.1.0-dev-*` prereleases live on nuget.org
+- [x] **Branch strategy** — `dev` for day-to-day, `main` protected (PR only) for stable releases
 
 ### Backlog
 
-- [ ] **Multi-provider support** — add settings for provider selection and expose additional providers available in MAF:
+- [ ] **Unlist accidental `0.1.0` stable** on NuGet — was published when version-reset commit was pushed directly to `main`; 0 downloads, safe to unlist now
+- [ ] **Multi-provider support** — add a provider selector setting and init path for each MAF-supported provider:
   - `OpenAI` — done (default)
-  - `Azure OpenAI` — MAF supports it natively; needs `LlmEndpoint` setting and separate agent init path
-  - `Anthropic` — officially supported in MAF; needs its NuGet package and agent init path
+  - `Azure OpenAI` — MAF supports it natively; needs `LlmEndpoint` setting
+  - `Anthropic` — officially supported in MAF; needs its NuGet package
   - `Ollama` — MAF supports it; useful for on-prem/air-gapped deployments
   - Reference: https://learn.microsoft.com/en-us/agent-framework/agents/providers/?pivots=programming-language-csharp
 
-- [ ] **MCP server for Seq context** — when an alert fires, the information in the alert event is limited (title, triggered-by message). Give the LLM tools to query Seq itself for deeper context:
-  - Build an MCP server that wraps the Seq HTTP API
+- [ ] **MCP server for Seq context** — give the LLM tools to query Seq itself for richer context before generating the summary:
+  - Build an MCP server wrapping the Seq HTTP API
   - Expose tools: `search_logs(filter, timeRange, count)`, `get_signal(signalId)`, `get_alert(alertId)`
-  - Register the MCP server as a tool provider on the MAF agent in `OnAttached`
-  - When the LLM generates the summary it can call these tools to pull related logs, stack traces, frequency trends, etc. before producing the final summary
-  - This turns a shallow "what happened" summary into a richer "here is the context and likely cause" analysis
+  - Register as a tool provider on the MAF agent in `OnAttached`
+  - Turns shallow "what happened" into "here is the context and likely cause" analysis
 
-- [ ] **Publish to nuget.org** as `0.1.0` once tests and multi-provider work are stable
-- [ ] **PR to datalust/seq-app-httprequest** — the integration is backwards-compatible (no-op when unconfigured); strong case for upstream merge
+- [ ] **Publish stable `0.1.0`** — after multi-provider support lands and API is settled; merge `dev` → `main` via PR
+- [ ] **PR to datalust/seq-app-httprequest** — backwards-compatible (no-op when unconfigured); strong case for upstream merge
 - [ ] **Repeat fork pattern** for Teams / Slack / Email apps
 
 ---
