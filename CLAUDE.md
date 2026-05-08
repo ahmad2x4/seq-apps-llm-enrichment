@@ -29,6 +29,13 @@ Every time you change the library, you must bump the version and clear the NuGet
    ```
 6. In Seq UI: **Settings → Apps → HTTP → Manage → Update** → pick the new version → **Save** the instance.
 
+## Branch strategy
+
+- **`dev`** — day-to-day work. Every push triggers CI and publishes a prerelease to NuGet (`0.1.0-dev-{N}`).
+- **`main`** — stable releases only. Merge `dev` → `main` when the API is stable. CI publishes without a suffix (e.g. `0.1.0`).
+- Feature branches off `dev`, PR back to `dev`.
+- Never commit directly to `main`.
+
 ## Seq infrastructure
 
 - Seq runs in Docker: container `anility-financial-assessment-seq-1`, image `datalust/seq:2026.1.16173-pre` (.NET 10)
