@@ -1,10 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Agents.AI;
+using Microsoft.Extensions.AI;
 using OpenAI;
 using OpenAI.Chat;
 using Seq.Apps;
@@ -21,9 +23,13 @@ namespace Seq.Apps.LlmEnrichment
         const int DefaultTimeoutSeconds = 30;
 
         const string AgentInstructions =
-            "You are a concise technical analyst for a software operations team. " +
-            "Summarize Seq alert events clearly, focusing on what happened and any actionable insights. " +
-            "Be brief — 2-3 sentences maximum. Do not include greetings or closing remarks.";
+            "You are a senior site reliability engineer analysing a Seq alert. " +
+            "You have access to a SearchEvents tool — always call it first to retrieve the actual log events " +
+            "from the alert time range before writing the summary. " +
+            "Use the time range and alert title from the prompt to choose an appropriate filter. " +
+            "Then write a 2-3 sentence incident summary covering: what is failing and why (use specific details " +
+            "from the retrieved events), the business impact, and the single most important immediate action. " +
+            "Never say 'investigate further' — be concrete. No greetings or closing remarks.";
 
         const string DefaultPromptTemplate =
             "Alert \"{Alert.Title}\" has triggered in production.\n\n" +
@@ -67,16 +73,29 @@ namespace Seq.Apps.LlmEnrichment
             HelpText = "Maximum time to wait for an LLM response before giving up. Defaults to 30 s.")]
         public int? LlmTimeoutSeconds { get; set; }
 
+        [SeqAppSetting(
+            InputType = SettingInputType.Password,
+            IsOptional = true,
+            DisplayName = "Seq API Key",
+            HelpText = "Seq API key used to query events for richer alert context. " +
+                       "Leave blank to attempt anonymous access (works when Seq allows unauthenticated reads).")]
+        public string? SeqApiKey { get; set; }
+
         protected override void OnAttached()
         {
             if (string.IsNullOrWhiteSpace(LlmApiKey) || string.IsNullOrWhiteSpace(LlmModel))
                 return;
 
+            var seqFunctions = new SeqFunctions(new HttpClient(), Host.BaseUri, SeqApiKey);
+            Func<string, string, string, int, Task<string>> searchFn = seqFunctions.SearchEvents;
+            var searchTool = AIFunctionFactory.Create(searchFn);
+
             _agent = new OpenAIClient(LlmApiKey!)
                 .GetChatClient(LlmModel!)
                 .AsAIAgent(
                     instructions: AgentInstructions,
-                    name: "SeqAlertSummarizer");
+                    name: "SeqAlertSummarizer",
+                    tools: [searchTool]);
         }
 
         protected async Task<Event<TData>> EnrichAsync(Event<TData> evt)
