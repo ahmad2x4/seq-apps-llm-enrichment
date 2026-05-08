@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <Description>LLM-based alert event enrichment for Seq apps.</Description>
+    <Authors>Ahmadreza Askari</Authors>
+    <TargetFramework>net8.0</TargetFramework>
+    <PackageTags>seq-app</PackageTags>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <RepositoryType>git</RepositoryType>
+    <LangVersion>9</LangVersion>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Seq.Apps.LlmEnrichment.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Seq.Apps" Version="2023.4.0" />
+    <PackageReference Include="Microsoft.Agents.AI.Abstractions" Version="1.3.0" />
+    <PackageReference Include="Microsoft.Agents.AI" Version="1.3.0" />
+    <PackageReference Include="Microsoft.Agents.AI.OpenAI" Version="1.3.0" />
+  </ItemGroup>
+
+</Project>
