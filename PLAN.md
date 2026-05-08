@@ -25,11 +25,14 @@ Build a NuGet library that any Seq app can take a dependency on to add **LLM-bas
 
 - [x] **Unlist accidental `0.1.0` stable** — confirmed unlisted (NuGet registration API returns 404)
 
-- [ ] **MCP server for Seq context** ⬅ next priority — give the LLM tools to query Seq itself for richer context before generating the summary:
-  - Build an MCP server wrapping the Seq HTTP API
-  - Expose tools: `search_logs(filter, timeRange, count)`, `get_signal(signalId)`, `get_alert(alertId)`
-  - Register as a tool provider on the MAF agent in `OnAttached`
-  - Turns shallow "what happened" into "here is the context and likely cause" analysis
+- [ ] **MAF function tools for Seq context** ⬅ next priority — give the LLM tools to query Seq for the actual events that triggered the alert, turning a shallow metadata summary into genuine root-cause analysis:
+  - No MCP server needed — MAF's `AIFunctionFactory.Create()` + `[Description]` attributes is sufficient for internal use
+  - `SeqApiKey` — one new `[SeqAppSetting]` (optional); Seq server URL comes from `Host.BaseUri` which is already on `SeqApp`, no extra setting needed
+  - Initial tool: `SearchEvents(string filter, string fromDateUtc, string toDateUtc, int count)` → calls `GET {Host.BaseUri}/api/events` with `X-Seq-ApiKey` header, returns rendered event messages as a string block
+  - Register the tool on the agent via `tools: [AIFunctionFactory.Create(seqFunctions.SearchEvents)]` in `OnAttached`
+  - With this the LLM can call `SearchEvents` to pull the actual `GATEWAY_TIMEOUT` error messages, customer IDs, amounts, etc. before writing the summary
+  - Reference: MAF function tools docs — https://learn.microsoft.com/en-us/agent-framework/agents/tools/function-tools?pivots=programming-language-csharp
+  - Reference: Seq HTTP API — https://datalust.co/docs/server-http-api (`/api/events` endpoint)
 
 - [ ] **Multi-provider support** — add a provider selector setting and init path for each MAF-supported provider:
   - `OpenAI` — done (default)
